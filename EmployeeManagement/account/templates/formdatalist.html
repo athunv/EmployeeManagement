@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Submissions</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        table thead {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+
+        table th,
+        table td {
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        table tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        table th {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.9rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <a href="{% url 'view_form' form.id %}" class="back-button">Back to Form</a>
+
+        <h1>Submissions for {{ form.name }}</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>SI No.</th>
+                    <th>Data</th>
+                    <th>Submitted At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in submissions %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ submission.submitted_data }}</td>
+                    <td>{{ submission.submitted_at }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'delete_submission' form.id submission.id %}"
+                            style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit"
+                                style="color: red; border: none; background: none; cursor: pointer;">Delete</button>
+                        </form>
+                        <a href="{% url 'edit_submission' form.id submission.id %}"
+                            style="margin-left: 10px; color: blue; text-decoration: none; cursor: pointer;">
+                            Edit
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>

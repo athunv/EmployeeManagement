@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Builder</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: black;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control {
+            width: 95%;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #fafafa;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            background-color: #fff;
+        }
+
+        button {
+            background-color: #0400ff;
+            color: #fff;
+            font-size: 16px;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #001bb3;
+        }
+
+        .field {
+            padding: 15px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        .field span {
+            color: black;
+            font-weight: 500;
+        }
+
+        .field button {
+            background-color: #b30039;
+            font-size: 14px;
+            width: auto;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+
+        .field button:hover {
+            background-color: #c82333;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+
+        ul li {
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        ul li a {
+            color: black;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        ul li a:hover {
+            text-decoration: underline;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            background-color: #6c757d;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .form-control, button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/employer/" class="back-button">Back to Employer Dashboard</a>
+
+        <h1>Form Builder</h1>
+
+        <div>
+            <input type="text" id="field-label" class="form-control" placeholder="Field Label">
+            <select id="field-type" class="form-control">
+                <option value="text">Text</option>
+                <option value="number">Number</option>
+                <option value="date">Date</option>
+                <option value="password">Password</option>
+                <option value="email">Email</option>
+            </select>
+            <button id="add-field">Add Field</button>
+        </div>
+
+        <div id="form-fields" class="form-container"></div>
+
+        <div>
+            <input type="text" id="form-name" class="form-control" placeholder="Form Name">
+            <button id="save-form">Save Form</button>
+        </div>
+
+        <h2>Saved Forms</h2>
+        <ul>
+            {% for form in forms %}
+                <li><a href="{% url 'view_form' form.id %}">{{ form.name }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const formFields = document.getElementById("form-fields");
+            const fieldLabel = document.getElementById("field-label");
+            const fieldType = document.getElementById("field-type");
+            const addFieldButton = document.getElementById("add-field");
+            const formNameInput = document.getElementById("form-name");
+            const saveFormButton = document.getElementById("save-form");
+
+            new Sortable(formFields, {
+                onEnd: function() {
+                    const order = Array.from(formFields.children).map(el => el.dataset.id);
+                    fetch("/reorder_fields/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ order }),
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error("Error:", error));
+                }
+            });
+
+            addFieldButton.addEventListener("click", function() {
+                const label = fieldLabel.value;
+                const fieldTypeValue = fieldType.value;
+
+                if (label && fieldTypeValue) {
+                    fetch("/form_builder/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ label, field_type: fieldTypeValue }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const fieldElement = document.createElement("div");
+                        fieldElement.className = "field";
+                        fieldElement.dataset.id = data.id;
+                        fieldElement.innerHTML = `
+                            <span>${data.label} (${data.field_type})</span>
+                            <button class="remove-field">Remove</button>
+                        `;
+                        formFields.appendChild(fieldElement);
+                        fieldLabel.value = "";
+                    })
+                    .catch(error => console.error("Error:", error));
+                } else {
+                    alert("Please provide both label and field type.");
+                }
+            });
+
+            formFields.addEventListener("click", function(event) {
+                if (event.target.classList.contains("remove-field")) {
+                    const fieldElement = event.target.closest(".field");
+                    fieldElement.remove();
+                }
+            });
+
+            saveFormButton.addEventListener("click", function() {
+                const formName = formNameInput.value;
+
+                if (formName) {
+                    fetch("/save_form/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: formName }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+                } else {
+                    alert("Form name is required.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
